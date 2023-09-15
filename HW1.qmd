@@ -1,0 +1,306 @@
+---
+title: "HW1"
+format: pdf
+editor: visual
+author: Himanshu Nimbarte
+---
+
+## Installing Packages
+
+Following commands are use to install packages
+
+```{r}
+# First run this
+if(!require('pacman'))
+  install.packages("pacman")
+```
+
+```{r}
+library(pacman)
+
+p_load(dlookr,
+       DMwR2, # Data Mining with R functions
+       GGally, # Pair-wise plots using ggplot2
+       Hmisc, # Data analysis 
+       palmerpenguins, # Alternative to the Iris dataset
+       tidyverse) # Data wrangling, manipulation, visualization
+```
+
+## Loading Data
+
+For loading data we will use function data()
+
+```{r}
+data(algae, package = "DMwR2")
+
+algae |> glimpse()
+```
+
+# **Central tendency: mean, median, mode**
+
+# Mean
+
+The **`mean`** function in R is used to calculate the arithmetic mean, also known as the average, of a numeric vector, matrix, or data frame. The mean is a measure of central tendency and represents the sum of all values divided by the number of values in the dataset.
+
+```{r}
+algae$a1 |>
+  mean()
+```
+
+# Median
+
+In R, the **`median`** function is used to calculate the median of a numeric vector, matrix, or data frame. The median is a measure of central tendency that represents the middle value in a dataset when it's sorted in ascending or descending order. If there is an even number of values, the median is the average of the two middle values.
+
+```{r}
+algae$a1 |>
+  median()
+```
+
+# Mode
+
+In R, the **`mode`** function is used to calculate the mode of a numeric vector or factor. The mode represents the value or values that occur most frequently in a dataset. Unlike the **`mean`** and **`median`**, which are measures of central tendency, the mode is a measure of the most common or frequent value(s).
+
+```{r}
+Mode <- function(x, na.rm=FALSE){
+if(na.rm) x<-x[!is.na(x)]
+ux <- unique (x)
+return (ux[which.max(tabulate(match(x, ux)))])
+}
+
+algae$a2 |> Mode()
+```
+
+## **`DMwRcentralValue()` function:**
+
+This function returns median or mode for the nominal variables.
+
+```{r}
+# Numerical variable
+algae$a1 |> centralValue()
+```
+
+```{r}
+# Nominal variable
+algae$speed |> centralValue()
+```
+
+## Statistics of spread(variation)
+
+### Variance
+
+In R, you can calculate the variance of a numeric vector, matrix, or data frame using the **`var`** function. Variance measures the spread or dispersion of data points around the mean. A higher variance indicates greater variability in the data.
+
+```{r}
+algae$a1 |> var()
+```
+
+### Standard deviation
+
+In R, you can calculate the standard deviation of a numeric vector, matrix, or data frame using the **`sd`** function. The standard deviation measures the dispersion or spread of data points around the mean. It's a common measure of variability in statistics.
+
+```{r}
+algae$a1 |> sd()
+```
+
+### Range
+
+In R, you can calculate the range of a numeric vector, which represents the difference between the maximum and minimum values in the dataset. To calculate the range, you can use the **`range`** function or simply subtract the minimum value from the maximum value.
+
+```{r}
+algae$a1 |> range()
+```
+
+### Maximum value
+
+To find the maximum value in a numeric vector or matrix in R, you can use the **`max`** function. This function returns the highest value within the specified data.
+
+```{r}
+algae$a1 |> max()
+```
+
+### Minimum value
+
+To find the minimum value in a numeric vector or matrix in R, you can use the min function. This function returns the smallest value within the specified data.
+
+```{r}
+algae$a1 |> min()
+```
+
+### Interquartile Range
+
+The Interquartile Range (IQR) is a statistical measure that represents the spread or variability of a dataset. It is defined as the range between the first quartile (Q1) and the third quartile (Q3) of a dataset when it is sorted in ascending order.
+
+3rd quartile (75%) - 1st quartile (25%)
+
+```{r}
+algae$a1 |> IQR()
+```
+
+### Quantiles
+
+Quantiles are values that divide a dataset into specified portions or intervals. Common quantiles include the median (which divides the data in half), quartiles (which divide the data into four equal parts), and percentiles (which divide the data into 100 equal parts).
+
+```{r}
+algae$a1 |> quantile()
+```
+
+Specifying specific quantiles:
+
+```{r}
+algae$a1 |> quantile(probs = c(0.2, 0.8))
+```
+
+## Missing Values
+
+```{r}
+library(purrr)
+# Compute the total number of NA values in the dataset
+nas <- algae %>% 
+  purrr::map_dbl(~sum(is.na(.))) %>% 
+  sum()
+
+cat("The dataset contains ", nas, "NA values. \n")
+```
+
+```{r}
+# Compute the number of incomplete rows in the dataset
+incomplete_rows <- algae %>% 
+  summarise_all(~!complete.cases(.)) %>%
+  nrow()
+```
+
+```{r}
+cat("The dataset contains ", incomplete_rows, "(out of ", nrow(algae),") incomplete rows. \n")
+```
+
+# Summaries of dataset
+
+## Base R's summary()
+
+```{r}
+algae |> summary()
+```
+
+### Hmisc's describe()
+
+```{r}
+data("penguins")
+penguins |> Hmisc::describe()
+```
+
+## dlookr's describe()
+
+```{r}
+penguins |> dlookr::describe()
+```
+
+## Summaries on a subset of data
+
+```{r}
+algae |>
+  summarise(avgNO3 = mean(NO3, na.rm=TRUE),
+            medA1 = median(a1))
+```
+
+```{r}
+algae |>
+  select(mxPH:Cl) |>
+  summarise_all(list(mean, median), na.rm = TRUE)
+```
+
+```{r}
+algae |>
+  select(a1:a7) |>
+  summarise_all(funs(var))
+```
+
+```{r}
+algae |>
+  select(a1:a7) |>
+  summarise_all(c("min", "max"))
+```
+
+## Use sumarise() with group_by()
+
+```{r}
+algae |>
+  group_by(season, size) |>
+  summarise(nObs = n(), mA7 = median(a7))
+```
+
+```{r}
+penguins |> 
+  group_by(species) |>
+  summarise(var = var(bill_length_mm, na.rm = TRUE))
+```
+
+## Aggregating Data
+
+```{r}
+penguins |>
+  group_by(species) |>
+  reframe(var = quantile(bill_length_mm, na.rm = TRUE))
+```
+
+```{r}
+penguins |>
+  group_by(species) |>
+  dlookr::describe(bill_length_mm)
+```
+
+## Getting to know your data set
+
+To load the dataset we will use data().
+
+```{r}
+data("algae")
+str(algae)
+```
+
+Here we will use install.packages() to install moments package which is use to use skewness function.
+
+In R, there is a package called **`moments`** that provides functions for calculating various statistical moments, including mean, variance, skewness, and kurtosis. This package can be useful when you need to compute these moments for a dataset. To use the **`moments`** package, follow these steps:
+
+```{r}
+install.packages("moments")
+library(moments)
+
+```
+
+Calculating Skewness for particular attribute in the dataset
+
+```{r}
+skewness(algae$a6)
+```
+
+To check co-relation between the attributes we will use cor()
+
+This will help us find co-relation between the attributes in the dataset
+
+```{r}
+correlation_matrix <- cor(algae[, sapply(algae,is.numeric)])
+print(correlation_matrix)
+```
+
+To check for missing values we will use .na().
+
+```{r}
+any_missing <- any(is.na(algae))
+print(any_missing)
+name = names(which(colSums(is.na(algae))>0))
+print(name)
+```
+
+```{r}
+algae[, c(name)]
+```
+
+### In this case as there are numerical values missing we can use mean of the present values and can replace them with the missing values, otherwise we can also use median and mode.
+
+We can omit the rows by using .omit() function
+
+```{r}
+algae1 <- algae #Duplicating dataframe
+algae1_clean <- na.omit(algae1)
+print(algae1_clean)
+```
